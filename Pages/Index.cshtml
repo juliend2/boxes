@@ -1,0 +1,81 @@
+@page
+@model IndexModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Boxes</title>
+    <style>
+        body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+        form { display: grid; gap: .5rem; margin-bottom: 2rem; }
+        .row { display: flex; gap: .5rem; }
+        input { padding: .4rem; border: 1px solid #ccc; border-radius: 4px; }
+        input[name="letter"] { width: 3rem; }
+        input[name="number"] { width: 6rem; }
+        textarea { width: 100%; padding: .4rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; resize: vertical; }
+        button { justify-self: start; padding: .4rem 1rem; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #eee; }
+        th { background: #f5f5f5; }
+        .error { color: red; font-size: .9rem; }
+    </style>
+</head>
+<body>
+    <h1>Boxes</h1>
+
+    <form method="post">
+    
+        @Html.AntiForgeryToken()
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <p class="error">@Model.Error</p>
+        }
+        <div class="row">
+            <input name="letter" placeholder="Letter" maxlength="1" required value="@Model.FormLetter" />
+            <input name="number" type="number" placeholder="Number" required value="@Model.FormNumber" />
+        </div>
+        <textarea name="content" rows="4" placeholder="Content" required>@Model.FormContent</textarea>
+        <button type="submit">Add Box</button>
+    </form>
+
+    @if (Model.Boxes.Count == 0)
+    {
+        <p>No boxes yet.</p>
+    }
+    else
+    {
+        <table>
+            @for (var i = 0; i < 10; i ++)
+            {
+                <tr>
+                    <td>@i</td>
+                    @foreach (var c in Model.Letters())
+                    {
+                        <td>
+                            @if (Model.Dict.ContainsKey(i) && Model.Dict[i].ContainsKey(c))
+                            {
+                                @Model.Dict[i][c]
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+            
+        </table>
+        <!-- <table>
+            <thead><tr><th>#</th><th>Letter</th><th>Number</th><th>Content</th></tr></thead>
+            <tbody>
+                @foreach (var box in Model.Boxes)
+                {
+                    <tr>
+                        <td>@box.Id</td>
+                        <td>@box.Letter</td>
+                        <td>@box.Number</td>
+                        <td style="white-space:pre-wrap">@box.GetContent()</td>
+                    </tr>
+                }
+            </tbody>
+        </table> -->
+    }
+</body>
+</html>
