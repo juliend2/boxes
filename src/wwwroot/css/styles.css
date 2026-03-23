@@ -1,0 +1,77 @@
+body {
+    font-family: sans-serif;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+form {
+    display: grid;
+    gap: .5rem;
+    max-width: 500px;
+    margin-bottom: 2rem;
+}
+.row {
+    display: flex;
+    gap: .5rem;
+}
+
+input {
+    padding: .4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+input[name="letter"] {
+    width: 3rem;
+}
+input[name="number"] {
+    width: 6rem;
+}
+
+textarea {
+    width: 100%;
+    padding: .4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+button {
+    justify-self: start;
+    padding: .4rem 1rem;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    text-align: left;
+    padding: .4rem .6rem;
+    border-bottom: 1px solid #eee;
+}
+th {
+    text-align: center;
+    background: #f5f5f5;
+}
+
+td {
+    min-width: 99px;
+    max-width: 99px;
+    padding: .2rem .26rem;
+    border-left: 1px solid #f5f5f5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+td:hover {
+    background-color: #fbffd4;
+}
+
+.error {
+    color: red;
+    font-size: .9rem;
+}

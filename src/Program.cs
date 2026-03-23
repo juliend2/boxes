@@ -1,28 +1,16 @@
 using Microsoft.Data.Sqlite;
 using System.Text.Json;
+using Boxes.Box;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<Database>();
 
 var app = builder.Build();
-
 app.Services.GetRequiredService<Database>().Init();
-
+app.UseStaticFiles();
 app.MapRazorPages();
 app.Run();
-
-public class Box
-{
-    public int Id { get; set; }
-    public char Letter { get; set; }
-    public int Number { get; set; }
-    public string Content { get; set; } = "";
-
-    public string GetContent() {
-      return Content;
-    }
-}
 
 public class Database
 {
@@ -33,7 +21,13 @@ public class Database
         using var conn = new SqliteConnection(ConnStr);
         conn.Open();
         conn.CreateCommand(
-            "CREATE TABLE IF NOT EXISTS boxes (id INTEGER PRIMARY KEY AUTOINCREMENT, letter TEXT NOT NULL, number INTEGER NOT NULL, content TEXT NOT NULL)"
+            @"CREATE TABLE IF NOT EXISTS boxes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                letter TEXT NOT NULL,
+                number INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                UNIQUE(letter, number)
+            );"
         ).ExecuteNonQuery();
     }
 
@@ -49,8 +43,9 @@ public class Database
             );
         using var reader = cmd.ExecuteReader();
         var list = new List<Box>();
-        if (reader.Read()) {
-          return reader.GetInt32(0);
+        if (reader.Read())
+        {
+            return reader.GetInt32(0);
         }
         return 0;
     }
@@ -84,21 +79,20 @@ public class Database
         var cmd = conn.CreateCommand(
             @"SELECT id, letter, number, content
               FROM   boxes
-              WHERE  number = @num "
-            );
+              WHERE  number = @num"
+        );
         cmd.Parameters.AddWithValue("@num", searchId);
         var results = new List<Box>();
 
-        // 4. Exécuter et lire les données
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
         {
             results.Add(new Box
             {
-              Id = reader.GetInt32(0),
-              Letter = reader.GetString(1)[0],
-              Number = reader.GetInt32(2),
-              Content = reader.GetString(3)
+                Id = reader.GetInt32(0),
+                Letter = reader.GetString(1)[0],
+                Number = reader.GetInt32(2),
+                Content = reader.GetString(3)
             });
         }
 
@@ -107,32 +101,26 @@ public class Database
 
     public Dictionary<int, Dictionary<char, string>> GetDict()
     {
-      var all = GetAll();
-      var lastNumber = GetLastPossibleNumber();
-      var dict = new Dictionary<int, Dictionary<char, string>>();
-      for (int i = 0; i < lastNumber+1; i++)
-      {
-        var records = GetRecordsById(i);
-        foreach (var box in records)
+        var lastNumber = GetLastPossibleNumber();
+        var dict = new Dictionary<int, Dictionary<char, string>>();
+        for (int i = 0; i < lastNumber + 1; i++)
         {
-            var d = new Dictionary<char, string>();
-            if (!dict.TryGetValue(i, out d)) {
-                dict.Add(i, new Dictionary<char, string>());
+            var records = GetRecordsById(i);
+            foreach (var box in records)
+            {
+                var d = new Dictionary<char, string>();
+                if (!dict.TryGetValue(i, out d))
+                {
+                    dict.Add(i, new Dictionary<char, string>());
+                }
+                dict[i][(char)box.Letter] = box.Content;
             }
-            // var SubDict = new Dictionary<char, string>();
-            var str = "";
-            if (!dict[i].TryGetValue((char)box.Letter, out str)) {
-                dict[i] = new Dictionary<char, string>();
-                // dict[i].Add((char)box.Letter, box.Content);
-            }
-            dict[i][(char)box.Letter] = box.Content;
         }
-      }
 
         string json = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
         Console.WriteLine(json);
-      
-      return dict;
+
+        return dict;
     }
 
     public void Add(char letter, int number, string content)
@@ -141,11 +129,12 @@ public class Database
         conn.Open();
         var cmd = conn.CreateCommand(
             @"INSERT INTO boxes (letter, number, content)
-              VALUES            ($l, $n, $c)"
-              );
-        cmd.Parameters.AddWithValue("$l", letter.ToString());
-        cmd.Parameters.AddWithValue("$n", number);
-        cmd.Parameters.AddWithValue("$c", content);
+              VALUES (@letter, @number, @content)
+              ON CONFLICT(letter, number) DO UPDATE SET content = excluded.content;"
+        );
+        cmd.Parameters.AddWithValue("@letter", letter.ToString());
+        cmd.Parameters.AddWithValue("@number", number);
+        cmd.Parameters.AddWithValue("@content", content);
         cmd.ExecuteNonQuery();
     }
 }

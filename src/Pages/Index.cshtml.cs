@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Boxes.Box;
 
 public class IndexModel : PageModel
 {
@@ -14,12 +15,14 @@ public class IndexModel : PageModel
 
     public IndexModel(Database db) => _db = db;
 
-    public void OnGet() { 
+    public void OnGet()
+    {
         Boxes = _db.GetAll();
         Dict = _db.GetDict();
     }
 
-    public char[] Letters() {
+    public char[] Letters()
+    {
         return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
     }
 

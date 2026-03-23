@@ -1,0 +1,58 @@
+@page
+@model IndexModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Boxes</title>
+    <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true" />
+</head>
+
+<body>
+
+    <h1>Boxes</h1>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <p class="error">@Model.Error</p>
+        }
+        <div class="row">
+            <input id="letter" name="letter" placeholder="Letter" maxlength="1" required value="@Model.FormLetter" />
+            <input id="number" name="number" type="number" placeholder="Number" required value="@Model.FormNumber" />
+        </div>
+        <textarea name="content" rows="4" placeholder="Content" required>@Model.FormContent</textarea>
+        <button type="submit">Add Box</button>
+    </form>
+
+
+    <table>
+        <tr>
+            <th></th>
+            @foreach (char c in Model.Letters())
+            {
+                <th>@c</th>
+            }
+        </tr>
+        @for (int i = 1; i <= 100; i++)
+        {
+            <tr>
+                <th>@i</th>
+                @foreach (char c in Model.Letters())
+                {
+                    <td data-number="@i" data-letter="@c" class="js-cell">
+                        @if (Model.Dict.ContainsKey(i) && Model.Dict[i].ContainsKey(c))
+                        {
+                            @Model.Dict[i][c]
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </table>
+
+    <script src="~/js/app.js"></script>
+</body>
+
+</html>

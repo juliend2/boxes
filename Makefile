@@ -1,8 +1,8 @@
 dev:
-	dotnet watch
+	cd src/ && dotnet watch
 
 build:
-	dotnet build
+	cd src/ && dotnet build
 
 exec:
-	./bin/boxes
+	cd src/ && ./bin/boxes
