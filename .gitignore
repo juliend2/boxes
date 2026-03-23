@@ -55,4 +55,7 @@ CodeCoverage/
 # NUnit
 *.VisualState.xml
 TestResult.xml
+
+# Data
+*.db
 nunit-*.xml
