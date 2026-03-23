@@ -6,8 +6,8 @@
     <meta charset="utf-8" />
     <title>Boxes</title>
     <style>
-        body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
-        form { display: grid; gap: .5rem; margin-bottom: 2rem; }
+        body { font-family: sans-serif; margin: 2rem auto; padding: 0 1rem; }
+        form { display: grid; gap: .5rem; max-width: 500px; margin-bottom: 2rem; }
         .row { display: flex; gap: .5rem; }
         input { padding: .4rem; border: 1px solid #ccc; border-radius: 4px; }
         input[name="letter"] { width: 3rem; }
@@ -16,7 +16,9 @@
         button { justify-self: start; padding: .4rem 1rem; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #eee; }
-        th { background: #f5f5f5; }
+        th { text-align: center; background: #f5f5f5; }
+        td { min-width: 99px; padding: .2rem .26rem; border-left: 1px solid #f5f5f5; }
+        td:hover { background-color: #fbffd4; }
         .error { color: red; font-size: .9rem; }
     </style>
 </head>
@@ -26,8 +28,7 @@
     <form method="post">
     
         @Html.AntiForgeryToken()
-        @if (!string.IsNullOrEmpty(Model.Error))
-        {
+        @if (!string.IsNullOrEmpty(Model.Error)) {
             <p class="error">@Model.Error</p>
         }
         <div class="row">
@@ -38,19 +39,20 @@
         <button type="submit">Add Box</button>
     </form>
 
-    @if (Model.Boxes.Count == 0)
-    {
+    @if (Model.Boxes.Count == 0) {
         <p>No boxes yet.</p>
-    }
-    else
-    {
+    } else {
         <table>
-            @for (var i = 0; i < 10; i ++)
-            {
+            <tr>
+                <th></th>
+                @foreach (var c in Model.Letters()) {
+                    <th>@c</th>
+                }
+            </tr>
+            @for (var i = 0; i < 10; i ++) {
                 <tr>
-                    <td>@i</td>
-                    @foreach (var c in Model.Letters())
-                    {
+                    <th>@i</th>
+                    @foreach (var c in Model.Letters()) {
                         <td>
                             @if (Model.Dict.ContainsKey(i) && Model.Dict[i].ContainsKey(c))
                             {
@@ -62,20 +64,7 @@
             }
             
         </table>
-        <!-- <table>
-            <thead><tr><th>#</th><th>Letter</th><th>Number</th><th>Content</th></tr></thead>
-            <tbody>
-                @foreach (var box in Model.Boxes)
-                {
-                    <tr>
-                        <td>@box.Id</td>
-                        <td>@box.Letter</td>
-                        <td>@box.Number</td>
-                        <td style="white-space:pre-wrap">@box.GetContent()</td>
-                    </tr>
-                }
-            </tbody>
-        </table> -->
     }
+
 </body>
 </html>
