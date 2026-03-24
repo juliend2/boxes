@@ -1,64 +1,64 @@
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient.Extensions.Azure;
 using System.Text.Json;
 using Boxes.Box;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
-builder.Services.AddSingleton<Database>();
+builder.Services.AddSingleton<Database>(
+    new Database(builder.Configuration.GetConnectionString("DefaultConnection")!)
+);
 
 var app = builder.Build();
+var authProvider = new ActiveDirectoryAuthenticationProvider();
+SqlAuthenticationProvider.SetProvider(SqlAuthenticationMethod.ActiveDirectoryDefault, authProvider);
 app.Services.GetRequiredService<Database>().Init();
 app.UseStaticFiles();
 app.MapRazorPages();
 app.Run();
 
-public class Database
+public class Database(string connStr)
 {
-    private const string ConnStr = "Data Source=boxes.db";
-
     public void Init()
     {
-        using var conn = new SqliteConnection(ConnStr);
+        using var conn = new SqlConnection(connStr);
         conn.Open();
         conn.CreateCommand(
-            @"CREATE TABLE IF NOT EXISTS boxes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                letter TEXT NOT NULL,
-                number INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                UNIQUE(letter, number)
-            );"
+            @"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='boxes' AND xtype='U')
+              CREATE TABLE boxes (
+                  id      INT PRIMARY KEY IDENTITY(1,1),
+                  letter  NVARCHAR(1)   NOT NULL,
+                  number  INT           NOT NULL,
+                  content NVARCHAR(MAX) NOT NULL,
+                  CONSTRAINT UQ_boxes_letter_number UNIQUE (letter, number)
+              );"
         ).ExecuteNonQuery();
     }
 
     public int GetLastPossibleNumber()
     {
-        using var conn = new SqliteConnection(ConnStr);
+        using var conn = new SqlConnection(connStr);
         conn.Open();
         var cmd = conn.CreateCommand(
-            @"SELECT    number
-              FROM      boxes
-              ORDER BY  number DESC
-              LIMIT     1 "
-            );
+            @"SELECT TOP 1 number
+              FROM   boxes
+              ORDER BY number DESC"
+        );
         using var reader = cmd.ExecuteReader();
-        var list = new List<Box>();
         if (reader.Read())
-        {
             return reader.GetInt32(0);
-        }
         return 0;
     }
 
     public List<Box> GetAll()
     {
-        using var conn = new SqliteConnection(ConnStr);
+        using var conn = new SqlConnection(connStr);
         conn.Open();
         var cmd = conn.CreateCommand(
-            @"SELECT    id, letter, number, content
-              FROM      boxes
-              ORDER BY  id DESC"
-            );
+            @"SELECT   id, letter, number, content
+              FROM     boxes
+              ORDER BY id DESC"
+        );
         using var reader = cmd.ExecuteReader();
         var list = new List<Box>();
         while (reader.Read())
@@ -74,7 +74,7 @@ public class Database
 
     public List<Box> GetRecordsById(int searchId)
     {
-        using var conn = new SqliteConnection(ConnStr);
+        using var conn = new SqlConnection(connStr);
         conn.Open();
         var cmd = conn.CreateCommand(
             @"SELECT id, letter, number, content
@@ -83,10 +83,8 @@ public class Database
         );
         cmd.Parameters.AddWithValue("@num", searchId);
         var results = new List<Box>();
-
         using var reader = cmd.ExecuteReader();
         while (reader.Read())
-        {
             results.Add(new Box
             {
                 Id = reader.GetInt32(0),
@@ -94,8 +92,6 @@ public class Database
                 Number = reader.GetInt32(2),
                 Content = reader.GetString(3)
             });
-        }
-
         return results;
     }
 
@@ -108,11 +104,8 @@ public class Database
             var records = GetRecordsById(i);
             foreach (var box in records)
             {
-                var d = new Dictionary<char, string>();
-                if (!dict.TryGetValue(i, out d))
-                {
+                if (!dict.ContainsKey(i))
                     dict.Add(i, new Dictionary<char, string>());
-                }
                 dict[i][(char)box.Letter] = box.Content;
             }
         }
@@ -125,12 +118,16 @@ public class Database
 
     public void Add(char letter, int number, string content)
     {
-        using var conn = new SqliteConnection(ConnStr);
+        using var conn = new SqlConnection(connStr);
         conn.Open();
         var cmd = conn.CreateCommand(
-            @"INSERT INTO boxes (letter, number, content)
-              VALUES (@letter, @number, @content)
-              ON CONFLICT(letter, number) DO UPDATE SET content = excluded.content;"
+            @"MERGE boxes WITH (HOLDLOCK) AS target
+              USING (VALUES (@letter, @number, @content)) AS src (letter, number, content)
+                ON target.letter = src.letter AND target.number = src.number
+              WHEN MATCHED THEN
+                UPDATE SET content = src.content
+              WHEN NOT MATCHED THEN
+                INSERT (letter, number, content) VALUES (src.letter, src.number, src.content);"
         );
         cmd.Parameters.AddWithValue("@letter", letter.ToString());
         cmd.Parameters.AddWithValue("@number", number);
@@ -139,9 +136,9 @@ public class Database
     }
 }
 
-public static class SqliteConnectionExtensions
+public static class SqlConnectionExtensions
 {
-    public static SqliteCommand CreateCommand(this SqliteConnection conn, string sql)
+    public static SqlCommand CreateCommand(this SqlConnection conn, string sql)
     {
         var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
