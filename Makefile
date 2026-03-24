@@ -6,3 +6,6 @@ build:
 
 exec:
 	cd src/ && ./bin/boxes
+
+container:
+	docker build -t boxes --file=./src/Dockerfile .
