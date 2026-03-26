@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Boxes.Box;
 
-public class IndexModel : PageModel
+public class IndexModel(Database db) : PageModel
 {
-    private readonly Database _db;
+    private readonly Database _db = db;
 
     public List<Box> Boxes { get; private set; } = new();
     public Dictionary<int, Dictionary<char, string>> Dict { get; private set; } = new();
@@ -13,17 +13,15 @@ public class IndexModel : PageModel
     public string FormNumber { get; private set; } = "";
     public string FormContent { get; private set; } = "";
 
-    public IndexModel(Database db) => _db = db;
+    public char[] Letters()
+    {
+        return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
+    }
 
     public void OnGet()
     {
         Boxes = _db.GetAll();
         Dict = _db.GetDict();
-    }
-
-    public char[] Letters()
-    {
-        return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
     }
 
     public IActionResult OnPost(string letter, string number, string content)

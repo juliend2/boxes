@@ -3,6 +3,9 @@ using Microsoft.Data.SqlClient.Extensions.Azure;
 using System.Text.Json;
 using Boxes.Box;
 
+string? value = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+Console.WriteLine(value);
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<Database>(
@@ -19,6 +22,8 @@ app.Run();
 
 public class Database(string connStr)
 {
+    private JsonSerializerOptions? _jsonSerializerOptions;
+
     public void Init()
     {
         using var conn = new SqlConnection(connStr);
@@ -33,6 +38,8 @@ public class Database(string connStr)
                   CONSTRAINT UQ_boxes_letter_number UNIQUE (letter, number)
               );"
         ).ExecuteNonQuery();
+
+        _jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
     }
 
     public int GetLastPossibleNumber()
@@ -106,11 +113,11 @@ public class Database(string connStr)
             {
                 if (!dict.ContainsKey(i))
                     dict.Add(i, new Dictionary<char, string>());
-                dict[i][(char)box.Letter] = box.Content;
+                dict[i][box.Letter] = box.Content;
             }
         }
 
-        string json = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(dict, _jsonSerializerOptions);
         Console.WriteLine(json);
 
         return dict;
