@@ -2,9 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(dotnet --version)",
-      "Bash(dotnet build:*)",
-      "Bash(grep -E \"\\\\.\\(csproj|json|cs\\)$\")",
-      "Bash(find /home/julien/Workbench/dotnet/boxes -type d -not -path */bin/* -not -path */obj/* -not -path */.git/*)"
+      "Bash(dotnet build:*)"
     ]
   }
 }
